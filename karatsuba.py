@@ -22,6 +22,12 @@ class Decimal:
     """
     def __init__(self, string):
         self.string = string
+        # Check the string for leading zeros
+        if len(string) > 0 and string[0] == '0':
+        	leading_zeros = 0
+        	while leading_zeros < len(string) and string[leading_zeros] == '0':
+        		leading_zeros += 1
+        	string = string[leading_zeros:]
         self.length = len(string)
         self.digits = list()
         for char in string:
@@ -78,6 +84,12 @@ class Decimal:
 		# Subtraction
 		difference = list(self.digits)
 		for index in range(len(other_decimal.digits)):
+			try:
+				p = difference[index] < other_decimal.digits[index]
+			except:
+				print self.string
+				print other_decimal.string
+				print difference
 			if difference[index] < other_decimal.digits[index]:
 				difference[index] = difference[index] + 10 - other_decimal.digits[index]
 				if difference[index+1] > 0:
@@ -94,7 +106,7 @@ class Decimal:
 		string = ''
 		for digit in reversed(difference):
 			string += str(digit)
-		if string[0] == '0':
+		if len(string) > 1 and string[0] == '0':
 			string = string[1:]
 		
 		return Decimal(string)
@@ -111,10 +123,12 @@ class Decimal:
 			second = int(other_decimal.string)
 			return Decimal(str(first*second))
         # The algorithm
+        # Find the n to cut numbers
 		length_cut = max(self.length, other_decimal.length)
 		cut = length_cut/2
 		if length_cut % 2 != 0:
 			cut += 1
+		# Find a, b, c and d strings
 		strings = list()
 		strings.append(self.string[::-1][cut:][::-1])
 		strings.append(self.string[::-1][:cut][::-1])
@@ -126,39 +140,30 @@ class Decimal:
 				first = int(self.string)
 				second = int(other_decimal.string)
 				return Decimal(str(first*second))
+		# Create a, b, c and d numbers
 		number_a = Decimal(strings[0])
 		number_b = Decimal(strings[1])
 		number_c = Decimal(strings[2])
 		number_d = Decimal(strings[3])
+		# Calculate z0=b*d, z1=(a+b)*(c+d)-a*c-b*d, z2=a*c
 		b_times_d = number_b.multiply(number_d)
-		print 'Pre: '+self.string+', '+other_decimal.string
-		print number_a, number_b, number_c, number_d
 		a_times_c = number_a.multiply(number_c)
 		a_plus_b = number_a.add(number_b)
 		c_plus_d = number_c.add(number_d)
 		a_plus_b_times_c_plus_d = a_plus_b.multiply(c_plus_d)
 		ad_plus_bc_minus_a_times_c = a_plus_b_times_c_plus_d.subtract(a_times_c)
 		ad_plus_bc = ad_plus_bc_minus_a_times_c.subtract(b_times_d)
-		"""
-		a_times_d = number_a.multiply(number_d)
-		b_times_c = number_b.multiply(number_c)
-		ad_plus_bc = a_times_d.add(b_times_c)
-		"""
+		# Assemble the product: (z2*10)^(2*n)+z1*10^n+z0
 		upper = Decimal(a_times_c.string+('0'*(cut*2)))
 		middle = Decimal(ad_plus_bc.string+('0'*cut))
 		lower = middle.add(b_times_d)
-		print 'K: '+self.string+', '+other_decimal.string
-		print cut
-		print number_a, number_b, number_c, number_d
-		print b_times_d, a_times_c, ad_plus_bc
-		print upper, middle, b_times_d
-		print upper.add(lower)
 		return upper.add(lower)
 		
 
 
-test1 = Decimal(FIRST)
-test2 = Decimal(SECOND)
-test3 = test1.multiply(test2)
-print test3
-print test3.string == ANSWER
+first = Decimal(FIRST)
+second = Decimal(SECOND)
+product = first.multiply(second)
+assert product.string == ANSWER
+print product
+
